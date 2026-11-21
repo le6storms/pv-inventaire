@@ -238,10 +238,10 @@ else{document.getElementById("lockErr").textContent="Code incorrect. Vérifiez l
     <div class="body">
       <p class="note">Les noms seront imprimés sous chaque case. Les signatures et cachets se font sur la feuille imprimée.</p>
       <div class="grid2">
-        <label class="f">La station<input type="text" id="n_station" autocomplete="off"></label>
-        <label class="f">DCM<input type="text" id="n_dcm" autocomplete="off"></label>
-        <label class="f">DEX<input type="text" id="n_dex" autocomplete="off"></label>
-        <label class="f">DAF / Audit / Cost cont.<input type="text" id="n_daf" autocomplete="off"></label>
+        <div class="f" style="display:flex;flex-direction:column;gap:6px"><label class="f" for="n_station">La station</label><input type="text" id="n_station" autocomplete="off" placeholder="Nom et prénom"><input type="text" id="n_station2" autocomplete="off" placeholder="2e personne (facultatif)" aria-label="La station, deuxième personne"></div>
+        <div class="f" style="display:flex;flex-direction:column;gap:6px"><label class="f" for="n_dcm">DCM</label><input type="text" id="n_dcm" autocomplete="off" placeholder="Nom et prénom"><input type="text" id="n_dcm2" autocomplete="off" placeholder="2e personne (facultatif)" aria-label="DCM, deuxième personne"></div>
+        <div class="f" style="display:flex;flex-direction:column;gap:6px"><label class="f" for="n_dex">DEX</label><input type="text" id="n_dex" autocomplete="off" placeholder="Nom et prénom"><input type="text" id="n_dex2" autocomplete="off" placeholder="2e personne (facultatif)" aria-label="DEX, deuxième personne"></div>
+        <div class="f" style="display:flex;flex-direction:column;gap:6px"><label class="f" for="n_daf">DAF / Audit / Cost cont.</label><input type="text" id="n_daf" autocomplete="off" placeholder="Nom et prénom"><input type="text" id="n_daf2" autocomplete="off" placeholder="2e personne (facultatif)" aria-label="DAF / Audit / Cost cont., deuxième personne"></div>
       </div>
     </div>
   </section>
@@ -291,7 +291,7 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function blank(){
   const pu=lsGet(LS_PU)||{S:775,G:625,P:320};
   const s={id:Date.now().toString(36),station:"",stationOther:"",date:new Date().toISOString().slice(0,10),ha:"",hd:"",
-    n:{S:6,G:6,P:2},idx:{},cash:{},recv:{S:"",G:"",P:""},tanks:{},names:{station:"",dcm:"",dex:"",daf:""},pu,example:false};
+    n:{S:8,G:8,P:2},idx:{},cash:{},recv:{S:"",G:"",P:""},tanks:{},names:{station:"",dcm:"",dex:"",daf:""},pu,example:false};
   return s;
 }
 
@@ -341,7 +341,7 @@ function fillInputs(){
   DENOMS.forEach(d=>$("c_"+d).value=S.cash[d]||"");
   PRODS.forEach(p=>{$("r_"+p.k).value=S.recv[p.k]||"";$("pu_"+p.k).value=S.pu[p.k]??""});
   TANKS.forEach(t=>{const v=S.tanks[t.k]||{};$("t_"+t.k+"_cm").value=v.cm||"";$("t_"+t.k+"_l").value=v.l||""});
-  for(const k in S.names)$("n_"+k).value=S.names[k]||"";
+  ["station","dcm","dex","daf"].forEach(k=>{$("n_"+k).value=S.names[k]||"";$("n_"+k+"2").value=S.names[k+"2"]||""});
   buildIdx();
 }
 function update(){
@@ -423,7 +423,7 @@ $("histSheet").addEventListener("click",e=>{
 async function buildXlsx(){
   const wb=new ExcelJS.Workbook();wb.creator="SNPC-D";
   const ws=wb.addWorksheet("PV INVENTAIRE",{pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:1,horizontalCentered:true,margins:{left:.4,right:.4,top:.4,bottom:.4,header:.2,footer:.2}},views:[{showGridLines:false}]});
-  ws.columns=[{width:15},{width:17},{width:17},{width:15},{width:13},{width:17}];
+  ws.columns=[{width:15},{width:17},{width:17},{width:17},{width:17},{width:20}];
   const NAVY="FF1F2A44",GREY="FFC9CDD3",LIGHT="FFE6E8EC";
   const thin={style:"thin",color:{argb:"FF8A919C"}};const box={top:thin,left:thin,bottom:thin,right:thin};
   const F="Calibri";
@@ -434,7 +434,7 @@ async function buildXlsx(){
   // En-tête
   ws.mergeCells("A1:A2");ws.getRow(1).height=30;ws.getRow(2).height=30;
   const logoId=wb.addImage({base64:LOGO_PNG,extension:"png"});
-  ws.addImage(logoId,{tl:{col:0.12,row:0.04},ext:{width:81,height:78},editAs:"oneCell"});
+  ws.addImage(logoId,{tl:{col:0.25,row:0.15},ext:{width:76,height:73},editAs:"oneCell"});
   cellAt("B1").value="INVENTAIRE DU :";cellAt("B1").font={name:F,bold:true,size:11};
   ws.mergeCells("C1:D1");cellAt("C1").value=S.date?S.date.split("-").reverse().join("/"):"";cellAt("C1").font={name:F,bold:true,size:13,color:{argb:"FF1A3D8F"}};
   cellAt("B2").value="S/S";cellAt("B2").font={name:F,bold:true,size:11};
@@ -458,14 +458,14 @@ async function buildXlsx(){
       if(f!==null){row.getCell(3).value=f;row.getCell(3).numFmt="0".repeat(Math.max(1,String(rec.f).length))}
       row.getCell(5).value=pu[k];row.getCell(5).numFmt="#,##0";
       if(o!==null&&f!==null){const q=f-o;sumV+=q*pu[k];
-        row.getCell(4).value={formula:`C${r}-B${r}`,result:q};row.getCell(4).numFmt="#,##0";
+        row.getCell(4).value={formula:`C${r}-B${r}`,result:q};row.getCell(4).numFmt='#,##0" L"';
         row.getCell(6).value={formula:`D${r}*E${r}`,result:q*pu[k]};row.getCell(6).numFmt="#,##0";
       }
       for(let c=1;c<=6;c++){const cl=row.getCell(c);cl.border=box;cl.font=cl.font||{name:F,size:10};if(c===1)cl.font={name:F,size:10};else if(c===5)cl.font={name:F,size:10};else cl.font={name:F,size:11,color:{argb:c===1?"FF000000":"FF1A3D8F"}};cl.alignment={horizontal:c===1?"left":"center",vertical:"middle"}}
       r++;
     }
     const tr=ws.getRow(r);ws.mergeCells(`A${r}:E${r}`);tr.getCell(1).value=totLbl;
-    tr.getCell(6).value={formula:`SUM(F${first}:F${r-1})`,result:sumV};tr.getCell(6).numFmt="#,##0";
+    if([...Array(S.n[k])].some((_,i)=>sorties(k+(i+1))!==null))tr.getCell(6).value={formula:`SUM(F${first}:F${r-1})`,result:sumV};tr.getCell(6).numFmt='#,##0" FCFA"';
     for(let c=1;c<=6;c++){const cl=tr.getCell(c);cl.fill={type:"pattern",pattern:"solid",fgColor:{argb:GREY}};cl.border=box;cl.font={name:F,bold:true,size:10,color:{argb:c===6?"FF1A3D8F":"FF000000"}};cl.alignment={horizontal:"center",vertical:"middle"}}
     r++;
   }
@@ -482,10 +482,10 @@ async function buildXlsx(){
   [["D","S"],["E","G"],["F","P"]].forEach(([col,k])=>{
     ws.mergeCells(`${col}${qa}:${col}${qb}`);ws.mergeCells(`${col}${va}:${col}${vb}`);
     const q=num(S.recv[k]);const qc=cellAt(col+qa),vc=cellAt(col+va);
-    if(q!==null){qc.value=q;qc.numFmt='#,##0" L"';vc.value={formula:`${col}${qa}*${pu[k]}`,result:q*pu[k]};vc.numFmt="#,##0"}
-    [qc,vc].forEach(c=>{c.alignment={horizontal:"center",vertical:"middle"};c.font={name:F,size:12,color:{argb:"FF1A3D8F"}};c.border=box});
+    if(q!==null){qc.value=q;qc.numFmt='#,##0" L"';vc.value={formula:`${col}${qa}*${pu[k]}`,result:q*pu[k]};vc.numFmt='#,##0" FCFA"'}
+    [qc,vc].forEach(c=>{c.alignment={horizontal:"center",vertical:"middle",shrinkToFit:true};c.font={name:F,size:11,color:{argb:"FF1A3D8F"}};c.border=box});
   });
-  const trw=ws.getRow(r);trw.getCell(1).value="TOTAL";ws.mergeCells(`B${r}:C${r}`);trw.getCell(2).value={formula:`SUM(C${c0}:C${r-1})`,result:ctot};trw.getCell(2).numFmt="#,##0";
+  const trw=ws.getRow(r);trw.getCell(1).value="TOTAL";ws.mergeCells(`B${r}:C${r}`);trw.getCell(2).value={formula:`SUM(C${c0}:C${r-1})`,result:ctot};trw.getCell(2).numFmt='#,##0" FCFA"';
   for(let c=1;c<=6;c++){const cl=trw.getCell(c);cl.border=box;cl.font={name:F,bold:true,size:11,color:{argb:c===2?"FF1A3D8F":"FF000000"}};cl.alignment={horizontal:"center",vertical:"middle"}}
   r+=2;
 
@@ -499,7 +499,7 @@ async function buildXlsx(){
     TANKS.forEach((t,i)=>{const c=row.getCell(i+2);const v=S.tanks[t.k]||{};
       if(f==="cm"&&v.cm)c.value=v.cm;
       if(f==="l"){const l=num(v.l);if(l!==null){c.value=l;c.numFmt='#,##0" L"'}}
-      if(f==="v"){const l=num(v.l);if(l!==null){const colL=String.fromCharCode(66+i);c.value={formula:`${colL}${lRow}*${pu[t.p]}`,result:l*pu[t.p]};c.numFmt="#,##0"}}
+      if(f==="v"){const l=num(v.l);if(l!==null){const colL=String.fromCharCode(66+i);c.value={formula:`${colL}${lRow}*${pu[t.p]}`,result:l*pu[t.p]};c.numFmt='#,##0" FCFA"'}}
       c.alignment={horizontal:"center",vertical:"middle"};c.font={name:F,size:11,color:{argb:"FF1A3D8F"}};c.border=box});
     row.getCell(1).font={name:F,bold:true,size:10};row.getCell(1).border=box;row.height=20;r++;});
   r++;
@@ -507,10 +507,17 @@ async function buildXlsx(){
   // Signatures
   const sr=r;const sig=[["A","A","LA STATION","station"],["B","C","DCM","dcm"],["D","D","DEX","dex"],["E","F","DAF / AUDIT / COST CONT","daf"]];
   sig.forEach(([a,b,t])=>{if(a!==b)ws.mergeCells(`${a}${sr}:${b}${sr}`);cellAt(a+sr).value=t});hdr(sr);ws.getRow(sr).height=22;
-  sig.forEach(([a,b,,k])=>{ws.mergeCells(`${a}${sr+1}:${b}${sr+1}`);const c=cellAt(a+(sr+1));c.value=S.names[k]||"";c.alignment={horizontal:"center",vertical:"bottom",wrapText:true};c.font={name:F,size:10};
-    for(const col of [a,b])cellAt(col+(sr+1)).border=box;});
-  ws.getRow(sr+1).height=70;
-  ws.pageSetup.printArea=`A1:F${sr+1}`;
+  const nm=k=>[(S.names[k]||"").trim(),(S.names[k+"2"]||"").trim()].filter(Boolean);
+  const two=sig.some(([,, ,k])=>nm(k).length>1);
+  const setName=(a,b,r1,r2,v)=>{ws.mergeCells(`${a}${r1}:${b}${r2}`);const c=cellAt(a+r1);c.value=v||"";
+    c.alignment={horizontal:"center",vertical:"bottom",wrapText:true};c.font={name:F,size:10};
+    for(let r=r1;r<=r2;r++)for(const col of [a,b])cellAt(col+r).border=box;};
+  sig.forEach(([a,b,,k])=>{const n=nm(k);
+    if(two&&n.length>1){setName(a,b,sr+1,sr+1,n[0]);setName(a,b,sr+2,sr+2,n[1]);}
+    else if(two){setName(a,b,sr+1,sr+2,n[0]);}
+    else{setName(a,b,sr+1,sr+1,n[0]);}});
+  ws.getRow(sr+1).height=70;if(two)ws.getRow(sr+2).height=70;
+  ws.pageSetup.printArea=`A1:F${two?sr+2:sr+1}`;
   return wb.xlsx.writeBuffer();
 }
 
